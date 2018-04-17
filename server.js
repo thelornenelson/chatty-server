@@ -31,14 +31,29 @@ wss.on('connection', (ws) => {
 
     const parsedData = JSON.parse(data)
 
-    const newMessage = {
-        id: uuidv4(),
-        type: "incomingMessage",
-        content: parsedData.content,
-        username: parsedData.username
-    };
+    let newMessage;
 
-    console.log(`${ newMessage.id }: User ${newMessage.username} says ${newMessage.content}`);
+    if(parsedData.type === "postNotification"){
+      newMessage = {
+          id: uuidv4(),
+          type: "incomingNotification",
+          content: `${parsedData.oldUsername} has changed their name to ${parsedData.username}`
+      };
+
+      console.log(`${parsedData.oldUsername} has changed their name to ${parsedData.username}`);
+
+    } else {
+
+      newMessage = {
+          id: uuidv4(),
+          type: "incomingMessage",
+          content: parsedData.content,
+          username: parsedData.username
+      };
+
+      console.log(`${ newMessage.id }: User ${newMessage.username} says ${newMessage.content}`);
+
+    }
 
     wss.broadcast(newMessage);
 
