@@ -6,6 +6,8 @@ const uuidv4 = require('uuid/v4');
 // set port to 3001
 const PORT = 3001;
 
+const userColorsCount = 5;
+
 // create express server
 const server = express()
   // server static assets
@@ -15,29 +17,50 @@ const server = express()
 // create websockets server
 const wss = new SocketServer({ server });
 
-wss.on('connection', (ws) => {
-  console.log('Client Connected');
+const generateColorId = function(){
+  return Math.floor((Math.random() * userColorsCount));
+};
 
-  // Broadcast to all connected clients. Converts data parameter to JSON before sending.
-  wss.broadcast = function broadcast(data) {
-    wss.clients.forEach(function each(client) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(data));
-      }
-    });
-  };
+// Broadcast to all connected clients. Converts data parameter to JSON before sending.
+wss.broadcast = function broadcast(data) {
+
+  wss.clients.forEach(function each(client) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+
+};
+
+wss.broadcastUserChange = function(){
+
+  wss.broadcast({
+    id: uuidv4(),
+    type: "incomingNotification",
+    userCount: wss.clients.size
+  });
+
+}
+
+wss.on('connection', (ws) => {
+
+  // add new property with colorId for this client
+  ws.myDetails = { colorId: generateColorId() };
+
+  console.log(`Client Connected, assigned colorId ${ ws.myDetails.colorId }`);
+
+  wss.broadcastUserChange()
 
   ws.on('message', function incoming(data) {
-
     const parsedData = JSON.parse(data)
 
     let newMessage;
 
     if(parsedData.type === "postNotification"){
       newMessage = {
-          id: uuidv4(),
-          type: "incomingNotification",
-          content: `${parsedData.oldUsername} has changed their name to ${parsedData.username}`
+        id: uuidv4(),
+        type: "incomingNotification",
+        content: `${parsedData.oldUsername} has changed their name to ${parsedData.username}`
       };
 
       console.log(`${parsedData.oldUsername} has changed their name to ${parsedData.username}`);
@@ -45,10 +68,11 @@ wss.on('connection', (ws) => {
     } else {
 
       newMessage = {
-          id: uuidv4(),
-          type: "incomingMessage",
-          content: parsedData.content,
-          username: parsedData.username
+        id: uuidv4(),
+        type: "incomingMessage",
+        content: parsedData.content,
+        username: parsedData.username,
+        colorId: ws.myDetails.colorId
       };
 
       console.log(`${ newMessage.id }: User ${newMessage.username} says ${newMessage.content}`);
@@ -59,6 +83,9 @@ wss.on('connection', (ws) => {
 
   });
 
-  ws.on('close', () => console.log('Client Disconnected'));
+  ws.on('close', (closeEvent) => {
+    console.log('Client Disconnected');
+    wss.broadcastUserChange()
+  });
 
 });
