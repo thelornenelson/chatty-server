@@ -18,6 +18,8 @@ const server = express()
 // create websockets server
 const wss = new SocketServer({ server });
 
+
+
 // generates number from 0 to userColorsCount - 1. Current implementation assigns colors sequentially on connect, but could easily be expanded to pick color based on username, alphabetical, random, etc.
 const generateColorId = function(){
   return wss.clients.size % userColorsCount;
@@ -45,6 +47,17 @@ wss.broadcastUserChange = function(){
 
 }
 
+// used to generate distinct anonymous names
+wss.nextAnonymous = 0;
+
+wss.generateNextUsername = function(){
+
+  wss.nextAnonymous++;
+  // return Anonymous, Anonymous1, Anonymous2, etc...
+  return `Anonymous${(wss.nextAnonymous - 1) || ""}`;
+
+}
+
 wss.on('connection', (ws) => {
 
   // add new property with colorId to this client
@@ -54,7 +67,6 @@ wss.on('connection', (ws) => {
 
   // someone has just connected, so broadcast the current count of connected users
   wss.broadcastUserChange()
-
 
   ws.on('message', function incoming(data) {
 
@@ -72,6 +84,20 @@ wss.on('connection', (ws) => {
 
       console.log(`${parsedData.oldUsername} has changed their name to ${parsedData.username}`);
 
+      wss.broadcast(newMessage);
+
+    } else if(parsedData.type === "postGenerateUsername"){
+
+      newMessage = {
+        id: uuidv4(),
+        type: "incomingGenerateUsername",
+        content: wss.generateNextUsername()
+      };
+
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(newMessage));
+      }
+
     } else {
       // otherwise a client has sent a new message. Build message by adding id, colorId
       newMessage = {
@@ -84,10 +110,12 @@ wss.on('connection', (ws) => {
 
       console.log(`${ newMessage.id }: User ${newMessage.username} says ${newMessage.content}`);
 
+      wss.broadcast(newMessage);
+
+
     }
 
-    // broadcast whatever message type was built.
-    wss.broadcast(newMessage);
+
 
   });
 
