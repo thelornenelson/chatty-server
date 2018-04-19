@@ -76,6 +76,8 @@ wss.on('connection', (ws) => {
     if(parsedData.type === "postNotification"){
       // notification, at this point will be a user name change.
 
+      ws.myDetails.username = parsedData.username;
+
       newMessage = {
         id: uuidv4(),
         type: "incomingNotification",
@@ -84,19 +86,25 @@ wss.on('connection', (ws) => {
 
       console.log(`${parsedData.oldUsername} has changed their name to ${parsedData.username}`);
 
-      wss.broadcast(newMessage);
-
     } else if(parsedData.type === "postGenerateUsername"){
 
-      newMessage = {
+      ws.myDetails.username = wss.generateNextUsername();
+
+      newUsername = {
         id: uuidv4(),
         type: "incomingGenerateUsername",
-        content: wss.generateNextUsername()
+        content: ws.myDetails.username
       };
 
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(newMessage));
+        ws.send(JSON.stringify(newUsername));
       }
+
+      newMessage = {
+        id: uuidv4(),
+        type: "incomingNotification",
+        content: `Say hi to ${ws.myDetails.username}.`
+      };
 
     } else {
       // otherwise a client has sent a new message. Build message by adding id, colorId
@@ -110,20 +118,28 @@ wss.on('connection', (ws) => {
 
       console.log(`${ newMessage.id }: User ${newMessage.username} says ${newMessage.content}`);
 
-      wss.broadcast(newMessage);
-
-
     }
 
-
+    // broadcast newMessage, however it's been defined.
+    wss.broadcast(newMessage);
 
   });
 
   ws.on('close', (closeEvent) => {
-    console.log('Client Disconnected');
+    console.log(`${ws.myDetails.username} disconnected`);
 
     // someone has disconnected, so rebroadcast current count of connected users.
     wss.broadcastUserChange()
+
+    const newMessage = {
+            id: uuidv4(),
+            type: "incomingNotification",
+            content: `${ws.myDetails.username} has left.`
+          };
+
+    // broadcast user left message
+    wss.broadcast(newMessage);
+
   });
 
 });
