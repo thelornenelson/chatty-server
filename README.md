@@ -6,10 +6,10 @@ A real time chat application, using WebSockets and React.
 
 1. Users are assigned a sequential Anonymous username and color on initial connect.
 2. Usernames can be changed and username changes are broadcast to all connected users.
-3. Users can send messages which are broadcast to call connected clients.
+3. Users can send messages which are broadcast to all connected clients.
 4. If message contains any image urls, images will be posted in the message feed.
 5. Application will display number of currently connected users in the nav bar.
-6. Application with indicate when users connect or disconnect from the chat channel.
+6. Application will indicate when users connect or disconnect from the chat channel.
 
 ## Final Product
 !["Chat Demo"](https://github.com/thelornenelson/chatty-app/blob/master/docs/chat-demo.png)
