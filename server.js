@@ -6,6 +6,7 @@ const uuidv4 = require('uuid/v4');
 // set port to 3001
 const PORT = 3001;
 
+// set this to match the number of colors defined in css
 const userColorsCount = 5;
 
 // create express server
@@ -17,13 +18,12 @@ const server = express()
 // create websockets server
 const wss = new SocketServer({ server });
 
+// generates number from 0 to userColorsCount - 1. Current implementation assigns colors sequentially on connect, but could easily be expanded to pick color based on username, alphabetical, random, etc.
 const generateColorId = function(){
-  // return Math.floor((Math.random() * userColorsCount));
-
   return wss.clients.size % userColorsCount;
 };
 
-// Broadcast to all connected clients. Converts data parameter to JSON before sending.
+// Broadcast data to all connected clients. Converts data parameter to JSON before sending.
 wss.broadcast = function broadcast(data) {
 
   wss.clients.forEach(function each(client) {
@@ -34,6 +34,7 @@ wss.broadcast = function broadcast(data) {
 
 };
 
+// broadcasts message with count of currently connected users
 wss.broadcastUserChange = function(){
 
   wss.broadcast({
@@ -46,19 +47,23 @@ wss.broadcastUserChange = function(){
 
 wss.on('connection', (ws) => {
 
-  // add new property with colorId for this client
+  // add new property with colorId to this client
   ws.myDetails = { colorId: generateColorId() };
 
   console.log(`Client Connected, assigned colorId ${ ws.myDetails.colorId }`);
 
+  // someone has just connected, so broadcast the current count of connected users
   wss.broadcastUserChange()
 
-  ws.on('message', function incoming(data) {
-    const parsedData = JSON.parse(data)
 
+  ws.on('message', function incoming(data) {
+
+    const parsedData = JSON.parse(data)
     let newMessage;
 
     if(parsedData.type === "postNotification"){
+      // notification, at this point will be a user name change.
+
       newMessage = {
         id: uuidv4(),
         type: "incomingNotification",
@@ -68,7 +73,7 @@ wss.on('connection', (ws) => {
       console.log(`${parsedData.oldUsername} has changed their name to ${parsedData.username}`);
 
     } else {
-
+      // otherwise a client has sent a new message. Build message by adding id, colorId
       newMessage = {
         id: uuidv4(),
         type: "incomingMessage",
@@ -81,12 +86,15 @@ wss.on('connection', (ws) => {
 
     }
 
+    // broadcast whatever message type was built.
     wss.broadcast(newMessage);
 
   });
 
   ws.on('close', (closeEvent) => {
     console.log('Client Disconnected');
+
+    // someone has disconnected, so rebroadcast current count of connected users.
     wss.broadcastUserChange()
   });
 
