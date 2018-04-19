@@ -18,7 +18,9 @@ const server = express()
 const wss = new SocketServer({ server });
 
 const generateColorId = function(){
-  return Math.floor((Math.random() * userColorsCount));
+  // return Math.floor((Math.random() * userColorsCount));
+
+  return wss.clients.size % userColorsCount;
 };
 
 // Broadcast to all connected clients. Converts data parameter to JSON before sending.
