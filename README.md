@@ -1,5 +1,4 @@
 # Chatty
-### chatty-app and chatty-server
 
 A real time chat application, using WebSockets and React.
 
@@ -14,8 +13,8 @@ A real time chat application, using WebSockets and React.
 
 ## Final Product
 !["Chat Demo"](https://github.com/thelornenelson/chatty-app/blob/master/docs/chat-demo.png)
-!["Image Posting"](https://github.com/thelornenelson/chatty-app/blob/master/docs/chat-demo.png)
-!["User Colors Demo"](https://github.com/thelornenelson/chatty-app/blob/master/docs/chat-demo.png)
+!["Image Posting"](https://github.com/thelornenelson/chatty-app/blob/master/docs/chat-image-demo.png)
+!["User Colors Demo"](https://github.com/thelornenelson/chatty-app/blob/master/docs/chat-color-demo.png)
 
 ## Getting Started
 
