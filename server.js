@@ -18,13 +18,6 @@ const server = express()
 // create websockets server
 const wss = new SocketServer({ server });
 
-
-
-// generates number from 0 to userColorsCount - 1. Current implementation assigns colors sequentially on connect, but could easily be expanded to pick color based on username, alphabetical, random, etc.
-const generateColorId = function(){
-  return wss.clients.size % userColorsCount;
-};
-
 // Broadcast data to all connected clients. Converts data parameter to JSON before sending.
 wss.broadcast = function broadcast(data) {
 
@@ -57,6 +50,11 @@ wss.generateNextUsername = function(){
   return `Anonymous${(wss.nextAnonymous - 1) || ""}`;
 
 }
+
+// generates number from 0 to userColorsCount - 1. Current implementation assigns colors sequentially on connect, but could easily be expanded to pick color based on username, alphabetical, random, etc.
+const generateColorId = function(){
+  return wss.nextAnonymous % userColorsCount;
+};
 
 wss.on('connection', (ws) => {
 
@@ -103,7 +101,7 @@ wss.on('connection', (ws) => {
       newMessage = {
         id: uuidv4(),
         type: "incomingNotification",
-        content: `Say hi to ${ws.myDetails.username}.`
+        content: `${ws.myDetails.username} has joined. Say hi!`
       };
 
     } else {
